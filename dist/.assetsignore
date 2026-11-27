@@ -1,0 +1,5 @@
+# Originals are uploaded to the private R2 bucket by the deployment script.
+media/**
+# The source snapshot belongs in private R2, never in static deployments.
+data.json
+data.js

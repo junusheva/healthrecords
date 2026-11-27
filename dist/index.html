@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Aijan’s private, searchable health knowledge library, with topics, a timeline, and original Telegram sources.">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="theme-color" content="#f4f7fa">
+  <title>Aijan’s Health Records · Personal medical archive</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/auth-client.js"></script>
+  <script defer src="assets/app.bundle.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar" aria-label="Library navigation">
+      <a class="brand" href="#overview" aria-label="Health Records home">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M20 7v26M7 20h26"/><path d="M10.8 10.8l18.4 18.4M10.8 29.2l18.4-18.4"/></svg></span>
+        <span>Health<span class="brand-second">Records</span></span>
+      </a>
+      <div class="space-label">PERSONAL LIBRARY</div>
+      <nav class="main-nav">
+        <a href="#overview" data-view="overview" class="nav-item active"><span data-icon="sun"></span><span>Overview</span></a>
+        <a href="#metrics" data-view="metrics" class="nav-item"><span data-icon="flask"></span><span>Health indicators</span></a>
+        <a href="#checkups" data-view="checkups" class="nav-item"><span data-icon="calendar"></span><span>Visits & screenings</span></a>
+        <a href="#library" data-view="library" class="nav-item"><span data-icon="library"></span><span>All records</span><span class="nav-count" id="nav-total">0</span></a>
+        <a href="#topics" data-view="topics" class="nav-item"><span data-icon="grid"></span><span>Care areas</span></a>
+        <a href="#timeline" data-view="timeline" class="nav-item"><span data-icon="calendar"></span><span>Timeline</span></a>
+        <a href="#documents" data-view="documents" class="nav-item"><span data-icon="file"></span><span>Documents</span></a>
+        <a href="#treatments" data-view="treatments" class="nav-item"><span data-icon="pill"></span><span>Treatment history</span></a>
+        <a href="#saved" data-view="saved" class="nav-item"><span data-icon="bookmark"></span><span>Saved</span><span class="nav-count" id="nav-saved">0</span></a>
+      </nav>
+      <div class="sidebar-topics" id="sidebar-topics"></div>
+      <div class="sidebar-bottom">
+        <div class="source-panel"><span class="source-icon" data-icon="telegram"></span><div><strong>Telegram archive</strong><span id="source-status">Waiting for an export</span></div></div>
+        <button type="button" class="nav-item utility" data-new-record><span data-icon="plus"></span><span>Add a new record</span></button><button type="button" class="nav-item utility" data-password><span data-icon="lock"></span><span>Change password</span></button><button type="button" class="nav-item utility" data-logout><span data-icon="close"></span><span>Sign out on all devices</span></button><button type="button" class="nav-item utility" id="backup-button"><span data-icon="download"></span><span>Download backup</span></button>
+        <button type="button" class="nav-item utility" data-import><span data-icon="help"></span><span>Import & help</span></button>
+        <div class="profile"><div class="avatar">A</div><div><strong>Aijan’s space</strong><span>Personal knowledge library</span></div></div>
+      </div>
+    </aside>
+    <div class="workspace">
+      <header class="topbar">
+        <button class="icon-button mobile-menu" id="menu-button" type="button" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false"><span data-icon="menu"></span></button>
+        <div class="breadcrumb"><span data-icon="leaf"></span><span>My space</span><span class="breadcrumb-divider">/</span><strong id="breadcrumb-current">All records</strong></div>
+        <div class="top-actions"><label class="select-field language-field"><span class="sr-only">Language</span><select id="language-select" aria-label="Language"><option value="ru">Русский</option><option value="en">English</option></select><span data-icon="chevron"></span></label><span class="private-badge"><span data-icon="lock"></span>Personal archive</span><button class="button button-primary button-small" type="button" data-new-record><span data-icon="plus"></span>Add a new record</button></div>
+      </header>
+      <main id="main" tabindex="-1">
+        <section class="welcome" id="welcome">
+          <div class="welcome-copy"><div class="eyebrow"><span class="small-flower" aria-hidden="true">✳</span> AIJAN’S PERSONAL HEALTH ARCHIVE</div><h1>Your health history.<br><em>A clearer picture.</em></h1><p>Appointments, test results, and the notes between them.<br>Connected to the original documents, in one place.</p><div class="welcome-actions"><button type="button" class="button button-ink" data-new-record><span data-icon="plus"></span>Add a new record</button><a href="#library" class="text-link">Explore your records</a></div><p class="intake-home-hint">Upload a screenshot or paste text. Review the extracted results, visits, and prescriptions.</p><div class="cloud-status" id="cloud-status" role="status"></div><div class="archive-range" id="archive-range"></div></div>
+          <div class="welcome-art" aria-hidden="true"><div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div><div class="art-spark spark-one">✳</div><div class="art-spark spark-two">✦</div><div class="art-card art-card-back"><i></i><b></b><b></b><b></b></div><div class="art-card art-card-front"><div class="art-card-symbol"><svg viewBox="0 0 60 60"><path d="M30 13v34M13 30h34M18 18l24 24M18 42l24-24"/></svg></div><span class="art-line"></span><span class="art-line short"></span><div class="art-tag"><span></span><span></span><span></span></div></div><div class="art-sticker"><svg viewBox="0 0 40 40"><path d="m11 20 6 6 12-13"/></svg></div></div>
+        </section>
+        <section class="stats-grid" aria-label="Library overview">
+          <div class="stat"><span class="stat-icon blue" data-icon="library"></span><div><span class="stat-label">Records collected</span><strong id="stat-records">0</strong></div><span class="stat-description">Your channel, in one place</span></div>
+          <div class="stat"><span class="stat-icon lavender" data-icon="file"></span><div><span class="stat-label">Original attachments</span><strong id="stat-documents">0</strong></div><span class="stat-description">Reports, scans, and prescriptions</span></div>
+          <div class="stat"><span class="stat-icon green" data-icon="grid"></span><div><span class="stat-label">Care areas connected</span><strong id="stat-careareas">0</strong></div><span class="stat-description">Find the history behind each topic</span></div>
+        </section>
+        <section class="collection" aria-labelledby="collection-title">
+          <div class="section-heading"><div><span class="eyebrow section-eyebrow" id="section-eyebrow">YOUR COLLECTION</span><h2 id="collection-title">All records</h2></div><div class="display-options" id="display-options"><button class="icon-button selected" type="button" id="grid-view" aria-label="Grid view" aria-pressed="true"><span data-icon="grid"></span></button><button class="icon-button" type="button" id="list-view" aria-label="List view" aria-pressed="false"><span data-icon="list"></span></button></div></div>
+          <div class="collection-toolbar" id="collection-toolbar"><div class="search-field"><span data-icon="search"></span><input id="search" type="search" placeholder="Search your notes, links, and topics…" aria-label="Search all records" autocomplete="off"><kbd>/</kbd></div><label class="select-field"><span class="sr-only">Sort records</span><select id="sort"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="title">Title A–Z</option></select><span data-icon="chevron"></span></label></div>
+          <div class="filter-row" id="filter-row"></div>
+          <div id="results-summary" class="results-summary" role="status" aria-live="polite"></div>
+          <div id="collection-content"></div>
+        </section>
+        <footer class="page-footer"><span><span data-icon="leaf"></span>A little space for a clearer mind.</span><button type="button" class="text-button" data-import>About this library</button></footer>
+      </main>
+    </div>
+  </div>
+  <div class="menu-scrim" id="menu-scrim" hidden></div>
+  <dialog id="import-dialog" class="modal import-modal" aria-labelledby="import-title"><div class="modal-heading"><span class="modal-symbol" data-icon="telegram"></span><button type="button" class="icon-button" data-close aria-label="Close import"><span data-icon="close"></span></button></div><div class="eyebrow">FROM CHANNEL TO COLLECTION</div><h2 id="import-title">Give your notes a home.</h2><p class="modal-intro">Import a Telegram export to turn your channel into a searchable library. Original messages stay intact.</p><div class="dropzone" id="dropzone"><span data-icon="upload"></span><strong>Drop your export here</strong><span>Telegram JSON, HTML, or a library backup</span><label class="button button-primary" for="import-file">Choose files</label><input id="import-file" type="file" accept=".json,.html,.htm" multiple class="sr-only"></div><div class="import-progress" id="import-progress" role="status" aria-live="polite"></div><details class="export-help" open><summary>How to export a Telegram channel</summary><ol><li>In Telegram Desktop, open the channel and choose Export chat history from its menu.</li><li>Choose JSON if available. HTML exports are also supported.</li><li>Import result.json, or choose all messages.html pages from the exported folder.</li></ol><p>If your Telegram app has no export option, use the cross-platform Telegram Desktop app. The native macOS app may not offer exports.</p></details><div class="storage-note"><span data-icon="lock"></span><p><strong>Your records are saved in Cloudflare R2.</strong> Imports, notes, indicators, and original files are available on your other devices after signing in. A downloaded JSON backup contains records and links to your private originals.</p></div></dialog>
+  <dialog id="record-dialog" class="modal record-modal" aria-labelledby="record-title"><div class="record-dialog-top"><span class="record-label">ORIGINAL RECORD</span><div><button class="icon-button" id="record-save" type="button" aria-label="Save record"><span data-icon="bookmark"></span></button><button class="icon-button" data-close type="button" aria-label="Close record"><span data-icon="close"></span></button></div></div><div id="record-meta" class="record-meta"></div><h2 id="record-title"></h2><div id="record-body" class="record-body"></div><div id="record-attachments"></div><div class="record-source" id="record-source"></div><form id="record-edit"><h3>Make it yours</h3><label>Title<input id="edit-title" maxlength="160" required></label><label>Topic<select id="edit-topic"></select></label><label>Your notes<textarea id="edit-notes" rows="3" placeholder="What would you like to remember?"></textarea></label><div class="form-actions"><span id="notes-status" role="status"></span><button class="button button-primary" type="submit">Save changes</button></div></form></dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  <dialog id="entry-dialog" class="modal tracking-modal" aria-labelledby="entry-title"></dialog>
+  <dialog id="intake-dialog" class="modal intake-modal" aria-labelledby="intake-title"></dialog>
+  <noscript><p class="noscript">Please enable JavaScript to search and organize this library.</p></noscript>
+</body>
+</html>
