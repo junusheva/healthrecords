@@ -1,0 +1,59 @@
+{
+  "name": "healthrecords",
+  "account_id": "35d0984364dd39647900da712d4a698e",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-11-27",
+  "workers_dev": false,
+  "preview_urls": false,
+  "send_metrics": false,
+  "routes": [
+    {
+      "pattern": "healthrecords.ayaijan.com",
+      "custom_domain": true
+    }
+  ],
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "not_found_handling": "none"
+  },
+  "vars": {
+    "R2_SEED_BYTES": "67108864"
+  },
+  "observability": {
+    "enabled": false
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "ARCHIVE_AUTH",
+        "class_name": "ArchiveAuth"
+      },
+      {
+        "name": "ARCHIVE_DATA",
+        "class_name": "ArchiveData"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1-auth",
+      "new_sqlite_classes": [
+        "ArchiveAuth"
+      ]
+    },
+    {
+      "tag": "v2-r2-records",
+      "new_sqlite_classes": [
+        "ArchiveData"
+      ]
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "ARCHIVE_FILES",
+      "bucket_name": "aijan-records"
+    }
+  ]
+}
