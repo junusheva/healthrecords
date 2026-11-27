@@ -2,7 +2,7 @@ import {readFile,writeFile} from 'node:fs/promises';
 
 // Build the interface only. Medical source exports are never build inputs.
 const root=new URL('../',import.meta.url);
-const names=['core','tracking','i18n','cloud','intake','ocr','intake-ui','app'];
+const names=['core','tracking','care','i18n','cloud','intake','ocr','intake-ui','care-ui','app'];
 const modules=[];
 for(const name of names){
  const source=await readFile(new URL('dist/assets/'+name+'.js',root),'utf8');

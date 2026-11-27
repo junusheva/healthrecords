@@ -2,6 +2,8 @@
 
 Russian and English health records, searchable documents, measurement history,
 editable checkup frequencies, and reviewed extraction from screenshots or text.
+Includes a vaccination calendar, planned versus completed doses, and replacement
+history for toothbrushes and loofahs with editable, attributed guidance.
 
 This repository contains application code and synthetic test fixtures only.
 Medical records, source exports, images, PDFs, and passwords must never be committed.
