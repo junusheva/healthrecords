@@ -1,5 +1,6 @@
 import {parseTelegramJSON,safeLocalImageData} from './core.js';
 import {mergeUserTracking} from './tracking.js';
+import {mergeCareData} from './care.js';
 export function mergeLegacyArchive(current,legacy,today,seed=current){
  const parsed=parseTelegramJSON(legacy),records=new Map(current.records.map(record=>[record.id,record]));
  const originals=new Map(seed.records.map(record=>[record.id,record]));
@@ -10,7 +11,7 @@ export function mergeLegacyArchive(current,legacy,today,seed=current){
   const original=originals.get(record.id),oldIncorrectTitle=seed.sourceCorrections?.[record.messageId]?.ignoreLegacyTitles?.includes(record.title);
   records.set(record.id,{...existing,title:original&&existing.title===original.title&&!oldIncorrectTitle?record.title:existing.title,topic:original&&existing.topic===original.topic?record.topic:existing.topic,saved:existing.saved||record.saved,notes});
  }
- return {...current,...mergeUserTracking(current,legacy,today),records:[...records.values()]};
+ return {...current,...mergeUserTracking(current,legacy,today),...mergeCareData(current,legacy,today),records:[...records.values()]};
 }
 export function enrichArchive(seed,stored){
  if(!stored)return seed;
@@ -20,7 +21,7 @@ export function enrichArchive(seed,stored){
   return old?{...record,...old,clinical:record.clinical,attachments:record.attachments,annotation:record.annotation,eventDate:record.eventDate,dateNote:record.dateNote}:record;
  });
  records.push(...previous.values());
- return {...stored,...seed,records,manualMeasurements:stored.manualMeasurements||[],manualCheckups:stored.manualCheckups||[],cadenceOverrides:stored.cadenceOverrides||{}};
+ return {...stored,...seed,...mergeCareData(stored,seed,new Date(Date.now()+86400000).toISOString().slice(0,10)),records,manualMeasurements:stored.manualMeasurements||[],manualCheckups:stored.manualCheckups||[],cadenceOverrides:stored.cadenceOverrides||{}};
 }
 export function createCloudArchive({fetchImpl=globalThis.fetch,origin=globalThis.location?.origin,onStatus=()=>{}}={}){
  let revision=null;

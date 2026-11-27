@@ -5,6 +5,7 @@ export const getLanguage = () => language;
 export const localized = (item,key) => language==='ru' && item[`${key}Ru`] ? item[`${key}Ru`] : item[key];
 
 const RU = {
+ 'Vaccination calendar':'Календарь прививок','Replacement reminders':'Замена щётки и мочалки',
  'Your records are saved in Cloudflare R2.':'Твои записи сохраняются в Cloudflare R2.',
  'Imports, notes, indicators, and original files are available on your other devices after signing in. A downloaded JSON backup contains records and links to your private originals.':'Импортированные записи, заметки, показатели и оригиналы доступны на других устройствах после входа. Скачиваемая резервная копия JSON содержит записи и ссылки на закрытые оригиналы.',
  'Loading your records from Cloudflare…':'Загружаю записи из Cloudflare…','Records loaded from Cloudflare':'Записи загружены из Cloudflare','Saving to Cloudflare…':'Сохраняю в Cloudflare…','Saved in Cloudflare R2':'Сохранено в Cloudflare R2','Changes have not been saved':'Изменения пока не сохранены',

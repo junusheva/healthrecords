@@ -1,5 +1,6 @@
 import {TOPICS,inferTopics,cleanTitle,normalizeRecord,normalize,normalizeClinical,safeAssetPath} from './core.js';
 import {METRIC_SPECS,CHECKUP_SPECS,daysSince,validateMeasurement,validateCheckup} from './tracking.js';
+import {extractCareCandidates,validateCareEvent} from './care.js';
 
 export const INTAKE_MAX_IMAGE_BYTES=8*1024*1024;
 export const INTAKE_MAX_IMAGES=3;
@@ -102,7 +103,7 @@ export function analyzeIntakeText(text,today) {
  const topic=measurements.length?'tests':suggestedTopics[0];
  const kind=measurements.length?'test':visits.length?'appointment':/назначен|принимать|дозиров|prescription|prescribed/i.test(text)?'prescription':'note';
  const clinical=extractClinicalText(text);
- return {text,title:cleanTitle(text,'New record'),topic,kind:clinical.prescriptions?.length?'prescription':kind,date,dates,clinical,measurements,visits,warnings:[...new Set(warnings)]};
+ return {text,title:cleanTitle(text,'New record'),topic,kind:clinical.prescriptions?.length?'prescription':kind,date,dates,clinical,measurements,visits,careCandidates:extractCareCandidates(text,date,today),warnings:[...new Set(warnings)]};
 }
 export function buildIntakeUpdate(current,input,today,uuid,createdAt) {
  const text=String(input.text||'').trim(),images=input.images||[];
@@ -124,6 +125,8 @@ export function buildIntakeUpdate(current,input,today,uuid,createdAt) {
   const item=validateCheckup(inputRow,today);
   manualCheckups.push({...item,id:'manual:'+uuid+':visit:'+index,sourceIds:[id],note:'Added from a reviewed record.'});
  }
- return {...current,records:[...(current.records||[]),record],manualMeasurements,manualCheckups};
+ const careHistory=[...(current.careEvents||[])];
+ for(const [index,row]of (input.careCandidates||[]).entries())if(row.selected)careHistory.push(validateCareEvent({...row,id:'manual:'+uuid+':care:'+index,sourceId:id},today));
+ return {...current,records:[...(current.records||[]),record],manualMeasurements,manualCheckups,careEvents:careHistory};
 }
 

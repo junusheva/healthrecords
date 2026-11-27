@@ -1,4 +1,6 @@
 import {configureIntake} from './intake-ui.js';
+import {configureCareUI} from './care-ui.js';
+import {mergeCareData} from './care.js';
 import {createCloudArchive,mergeLegacyArchive} from './cloud.js';
 import { TOPICS, topicById, normalizeRecord, parseTelegramJSON, mergeRecords, filterRecords, safeUrl, safeAssetPath, cleanTitle, normalize, parseExportDate, safeLocalImageData } from './core.js';
 import { METRIC_SPECS, CHECKUP_SPECS, WHO_GUIDANCE, GUIDANCE_REVIEWED, measurementSeries, checkupHistory, daysSince, validateMeasurement, validateCheckup, canonicalMeasurement, mergeUserTracking, cadenceSetting, updateCadenceOverrides, mergeCadenceOverrides } from './tracking.js';
@@ -42,7 +44,7 @@ const el = (tag, className, text) => {
 function hydrateIcons(root = document) { root.querySelectorAll('[data-icon]').forEach(element => element.innerHTML = icon(element.dataset.icon)); }
 hydrateIcons();
 
-const viewTitles = { overview:'At a glance', metrics:'Health indicators', checkups:'Visits & screenings', library:'All records', topics:'Care areas', timeline:'Timeline', documents:'Documents', treatments:'Treatment history', saved:'Saved for later' };
+const viewTitles = { overview:'At a glance', metrics:'Health indicators', checkups:'Visits & screenings', vaccinations:'Vaccination calendar', hygiene:'Replacement reminders', library:'All records', topics:'Care areas', timeline:'Timeline', documents:'Documents', treatments:'Treatment history', saved:'Saved for later' };
 let state = { schemaVersion:1, channel:{name:'Telegram archive'}, records:[] };
 let database;
 let view = 'overview';
@@ -119,6 +121,7 @@ function sourceButtons(references, className = 'source-buttons') {
   return container;
 }
 
+const careUI=configureCareUI({getState:()=>state,commit,notify,todayDate,getLanguage,openDialog,sourceButtons});
 function render() {
   const saved = state.records.filter(record => record.saved).length;
   const counts = countsByTopic();
@@ -157,14 +160,14 @@ function renderCollection() {
   $('#breadcrumb-current').textContent = title;
   $('#collection-title').textContent = title;
   $('#section-eyebrow').textContent = view === 'metrics'?'TRACK YOUR RESULTS':view === 'checkups'?'LAST VISITS, IN CONTEXT':view === 'topics' ? 'FIND THE CONNECTIONS' : view === 'timeline' ? 'THROUGH THE YEARS' : view === 'saved' ? 'KEEP IT CLOSE' : view === 'overview' ? 'CONNECTED TO YOUR ORIGINAL RECORDS' : view === 'treatments' ? 'DATED MENTIONS, IN CONTEXT' : 'YOUR COLLECTION';
-  $('#display-options').hidden = ['overview','topics','treatments','documents','metrics','checkups'].includes(view);
-  $('#collection-toolbar').hidden = ['topics','overview','metrics','checkups'].includes(view);
+  $('#display-options').hidden = ['overview','topics','treatments','documents','metrics','checkups','vaccinations','hygiene'].includes(view);
+  $('#collection-toolbar').hidden = ['topics','overview','metrics','checkups','vaccinations','hygiene'].includes(view);
   $('#sort').closest('label').hidden = ['treatments','timeline'].includes(view);
   $('#search').placeholder = view === 'documents' ? 'Search report text, document titles, and topics…' : view === 'treatments' ? 'Search medication names and history…' : 'Search your notes, documents, and topics…';
   const filterRow = $('#filter-row');
   filterRow.replaceChildren();
   const counts = countsByTopic();
-  if (!['topics','overview','treatments','metrics','checkups'].includes(view) && state.records.length) {
+  if (!['topics','overview','treatments','metrics','checkups','vaccinations','hygiene'].includes(view) && state.records.length) {
     const items = [{ id:'all', name:'All topics' }, ...TOPICS.filter(topic => counts[topic.id])];
     items.forEach(topic => {
       const button = el('button', `filter-chip${activeTopic === topic.id ? ' active' : ''}`, topic.name);
@@ -177,6 +180,7 @@ function renderCollection() {
   const content = $('#collection-content');
   content.replaceChildren();
   $('#results-summary').textContent = '';
+  if(view==='vaccinations'||view==='hygiene'){careUI.render(content,view==='vaccinations'?'vaccine':'hygiene');return;}
   if (!state.records.length) { content.append(emptyLibrary()); return; }
   if (view === 'metrics') {renderMetrics(content);return;}
   if (view === 'checkups') {renderCheckups(content);return;}
@@ -245,7 +249,7 @@ function renderOverview(content) {
   if(state.coverage?.snapshotDate)heading.append(el('span','snapshot-badge',readableDate(state.coverage.snapshotDate)));
   content.append(heading);
   const actions=el('div','overview-actions');
-  for(const [route,label,symbol] of [['metrics','Track your health indicators','flask'],['checkups','See visits and screenings','calendar']]){const link=el('a','overview-action');link.href='#'+route;const image=el('span');image.innerHTML=icon(symbol);link.append(image,el('strong','',label));actions.append(link);}content.append(actions);
+  for(const [route,label,symbol] of [['metrics','Track your health indicators','flask'],['checkups','See visits and screenings','calendar'],['vaccinations','Vaccination calendar','calendar'],['hygiene','Replacement reminders','leaf']]){const link=el('a','overview-action');link.href='#'+route;const image=el('span');image.innerHTML=icon(symbol);link.append(image,el('strong','',label));actions.append(link);}content.append(actions);
   const latest = el('section','latest-panel');
   const recent=[...state.records].sort((a,b)=>String(recordDate(b)).localeCompare(String(recordDate(a)))).slice(0,2);
   const latestHeader=el('div','panel-heading');latestHeader.append(el('h3','','Your latest detailed notes'));
@@ -570,12 +574,12 @@ async function importFiles(fileList) {
     let channel = state.channel;
     let totalAdded = 0;
     let found = 0;
-    let tracking={manualMeasurements:state.manualMeasurements||[],manualCheckups:state.manualCheckups||[],cadenceOverrides:state.cadenceOverrides||{}};
+    let tracking={manualMeasurements:state.manualMeasurements||[],manualCheckups:state.manualCheckups||[],cadenceOverrides:state.cadenceOverrides||{},...mergeCareData(state,{},todayDate())};
     for (const file of files) {
       if (!/\.(?:json|html?)$/i.test(file.name)) throw new Error('Choose a JSON or HTML export. If you have a ZIP, extract it first.');
       const text = (await file.text()).replace(/^\uFEFF/, '');
       let parsed;
-      try { if(/\.json$/i.test(file.name)){const json=JSON.parse(text);parsed=parseTelegramJSON(json);if(json.schemaVersion===1)tracking=mergeUserTracking(tracking,json,todayDate());}else parsed=parseHTML(text); }
+      try { if(/\.json$/i.test(file.name)){const json=JSON.parse(text);parsed=parseTelegramJSON(json);if(json.schemaVersion===1)tracking={...mergeUserTracking(tracking,json,todayDate()),...mergeCareData(tracking,json,todayDate())};}else parsed=parseHTML(text); }
       catch(error) { throw new Error(`${file.name}: ${error instanceof SyntaxError ? 'This is not valid JSON. Choose result.json from your export.' : error.message}`); }
       parsed.records=parsed.records.map(record=>{
         const existing=state.records.find(item=>item.messageId===record.messageId && item.channelName===record.channelName && normalize(item.text)===normalize(record.text) && item.date?.slice(0,10)===record.date?.slice(0,10));
@@ -600,7 +604,7 @@ function navigate() {
   if (!Object.hasOwn(viewTitles,requested)) { if (requested !== 'main') { view = 'overview'; renderCollection(); } return; }
   view = requested; pageLimit = 60;
   if (view === 'topics') activeTopic = 'all';
-  if(['overview','treatments','metrics','checkups'].includes(view))activeTopic='all';
+  if(['overview','treatments','metrics','checkups','vaccinations','hygiene'].includes(view))activeTopic='all';
   renderCollection(); closeMenu();window.scrollTo({top:0});
 }
 document.querySelectorAll('[data-import]').forEach(button => button.addEventListener('click',openImport));

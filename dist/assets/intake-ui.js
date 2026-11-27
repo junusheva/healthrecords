@@ -1,5 +1,6 @@
 import {TOPICS} from './core.js';
 import {METRIC_SPECS,CHECKUP_SPECS} from './tracking.js';
+import {CARE_ITEMS} from './care.js';
 import {analyzeIntakeText,buildIntakeUpdate,INTAKE_MAX_IMAGES} from './intake.js';
 import {intakeImageFile,recognizeIntakeImages} from './ocr.js';
 
@@ -10,7 +11,7 @@ export function configureIntake({getState,commit,uploadImages,openDialog,notify,
  let controller;
  function openNewRecord() {
   controller?.abort();controller=new AbortController();const signal=controller.signal;
-  let images=[],draft=null,busy=false,measurementRows=[],visitRows=[],clinicalFields={};
+  let images=[],draft=null,busy=false,measurementRows=[],visitRows=[],careRows=[],clinicalFields={};
   dialog.replaceChildren();
   const heading=make('div','modal-heading');const title=make('h2','',t('Add a new record','Добавить новую запись'));title.id='intake-title';
   const close=make('button','icon-button','×');close.type='button';close.setAttribute('aria-label',t('Close','Закрыть'));close.addEventListener('click',()=>dialog.close());heading.append(title,close);
@@ -55,7 +56,7 @@ export function configureIntake({getState,commit,uploadImages,openDialog,notify,
   const field=(parent,labelText,node)=>{const label=make('label','intake-label',labelText);label.append(node);parent.append(label);return node;};
   const textInput=(value,type='text')=>{const input=make('input');input.type=type;input.value=value??'';return input;};
   function showDraft() {
-   draft=analyzeIntakeText(raw.value,todayDate());preview.replaceChildren();measurementRows=[];visitRows=[];clinicalFields={};
+   draft=analyzeIntakeText(raw.value,todayDate());preview.replaceChildren();measurementRows=[];visitRows=[];careRows=[];clinicalFields={};
    preview.append(make('h3','',t('Review before saving','Проверь перед сохранением')));
    preview.append(make('p','archive-note',t('Check the dates, decimal separators and units against the original. Handwriting and blurred photos can be misread.','Сверь с оригиналом даты, десятичные знаки и единицы. Рукописный текст и нечёткие снимки могут распознаваться с ошибками.')));
    const titleInput=field(preview,t('Title','Заголовок'),textInput(draft.title));titleInput.name='title';titleInput.maxLength=160;titleInput.required=true;
@@ -82,7 +83,12 @@ export function configureIntake({getState,commit,uploadImages,openDialog,notify,
    };
    if(draft.measurements.length){preview.append(make('h4','',t('Add to indicator history','Добавить в историю показателей')));draft.measurements.forEach(row=>makeRow(row,false));}
    if(draft.visits.length){preview.append(make('h4','',t('Add to visits and screenings','Добавить в визиты и обследования')));draft.visits.forEach(row=>makeRow(row,true));}
-   if(!draft.measurements.length&&!draft.visits.length)preview.append(make('p','archive-note',t('This will be saved as a searchable record with its original images. No numeric results or completed visits were identified.','Сохранится запись с текстом и оригинальными изображениями. Числовые результаты или состоявшиеся визиты не найдены.')));
+   if(draft.careCandidates.length){preview.append(make('h4','',t('Vaccinations and replacements','Прививки и замена предметов')));for(const candidate of draft.careCandidates){
+    const spec=CARE_ITEMS.find(item=>item.id===candidate.item),row=make('fieldset','intake-extracted-row'),legend=make('legend'),selected=textInput('','checkbox');selected.checked=candidate.selected;legend.append(selected,document.createTextNode(getLanguage()==='ru'?spec.nameRu:spec.name));row.append(legend,make('p','intake-evidence',candidate.evidence));
+    const status=make('select');for(const [value,en,ru]of [['done','Done','Выполнено'],['planned','Planned','Запланировано']]){const option=make('option','',t(en,ru));option.value=value;status.append(option);}status.value=candidate.status;field(row,t('Status','Статус'),status);
+    const entryDate=field(row,t('Date','Дата'),textInput(candidate.date,'date'));entryDate.max=status.value==='done'?todayDate():'2199-12-31';status.addEventListener('change',()=>{entryDate.max=status.value==='done'?todayDate():'2199-12-31';});careRows.push({candidate,selected,status,date:entryDate});preview.append(row);
+   }}
+   if(!draft.measurements.length&&!draft.visits.length&&!draft.careCandidates.length)preview.append(make('p','archive-note',t('This will be saved as a searchable record with its original images. No numeric results or completed visits were identified.','Сохранится запись с текстом и оригинальными изображениями. Числовые результаты или состоявшиеся визиты не найдены.')));
    const medical=make('details','intake-clinical');medical.open=Object.values(draft.clinical).some(value=>Array.isArray(value)&&value.length);
    medical.append(make('summary','',t('Findings, prescriptions and care plan','Заключение, назначения и план')));
    for(const [key,en,ru]of [['clinic','Clinic','Клиника'],['clinician','Doctor','Врач'],['findings','Symptoms and findings','Жалобы и результаты'],['assessments','Diagnosis as written in the source','Диагноз как в источнике'],['prescriptions','Prescriptions as written in the source','Назначения как в источнике'],['recommendations','Recommendations and plans','Рекомендации и планы'],['procedures','Completed procedures','Выполненные процедуры'],['uncertain','Needs checking','Требует проверки']]){
@@ -119,8 +125,9 @@ export function configureIntake({getState,commit,uploadImages,openDialog,notify,
     const values=new FormData(preview);
     const measurements=measurementRows.map(row=>({...row.candidate,selected:row.selected.checked,value:row.value.value,unit:row.unit.value,date:row.date.value,refLow:row.low.value,refHigh:row.high.value}));
     const visits=visitRows.map(row=>({...row.candidate,selected:row.selected.checked,date:row.date.value}));
+    const careCandidates=careRows.map(row=>({...row.candidate,selected:row.selected.checked,date:row.date.value,status:row.status.value}));
     const clinical=Object.fromEntries(Object.entries(clinicalFields).map(([key,input])=>[key,key==='clinic'||key==='clinician'?input.value:input.value.split('\n').map(line=>line.trim()).filter(Boolean)]));
-    const uuid=crypto.randomUUID(),createdAt=new Date().toISOString(),input={text:raw.value,title:values.get('title'),topic:values.get('topic'),date:values.get('date'),kind:draft.kind,clinical,measurements,visits};
+    const uuid=crypto.randomUUID(),createdAt=new Date().toISOString(),input={text:raw.value,title:values.get('title'),topic:values.get('topic'),date:values.get('date'),kind:draft.kind,clinical,measurements,visits,careCandidates};
     // Validate the selected observations before uploading any originals.
     buildIntakeUpdate(getState(),{...input,images:images.map(image=>({name:image.name,url:'media/pending.jpg'}))},todayDate(),uuid,createdAt);
     const uploaded=await uploadImages(images);if(signal.aborted)return;
